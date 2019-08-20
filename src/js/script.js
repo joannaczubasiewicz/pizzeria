@@ -186,6 +186,7 @@
             const thisCart = this;
 
             /*generate HTML based on template*/
+            menuProduct.amount = menuProduct.amountWidget.value;
 
             const generatedHTML = templates.cartProduct(menuProduct);
 
