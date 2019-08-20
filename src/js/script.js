@@ -165,6 +165,7 @@
             thisCart.dom = {};
             thisCart.dom.wrapper = element;
             thisCart.dom.toggleTrigger = thisCart.dom.wrapper.querySelector(select.cart.toggleTrigger);
+            thisCart.dom.productList = document.querySelector(select.containerOf.cart);
 
 
         }
@@ -179,6 +180,27 @@
 
             });
 
+        }
+
+        add(menuProduct) {
+            const thisCart = this;
+
+            /*generate HTML based on template*/
+
+            const generatedHTML = templates.cartProduct(menuProduct);
+
+            console.log(generatedHTML);
+
+            /*create DOM element using utils.createElementFromHTML*/
+
+            const generatedDom = utils.createDOMFromHTML(generatedHTML);
+
+
+            /*add element to cart*/
+            thisCart.dom.productList.appendChild(generatedDom);
+
+
+            console.log('adding product:', menuProduct);
         }
     }
 
@@ -277,10 +299,6 @@
 
         initAccordion() {
             const thisProduct = this;
-            /* find the clickable trigger (the element that should react to clicking) */
-
-            //const clickableTrigger = thisProduct.element.querySelectorAll(select.menuProduct.clickable);
-            /*document.querySelectorAll(select.menuProduct.clickable);*/
 
             /* START: click event listener to trigger */
             //for (let trigger of clickableTrigger) {
@@ -301,22 +319,7 @@
                     /* toggle active class on element of thisProduct */
                     thisProduct.element.classList.toggle('active');
 
-                    //  console.log(activeProducts);
 
-                    /* START LOOP: for each active product
-                    for (let activeProduct of activeProducts) {
-
-                        /* START: if the active product isn't the element of thisProduct
-                        if (activeProduct != thisProduct.element) {
-                            /* remove class active for the active product
-                            activeProduct.classList.remove('active');
-
-                        }
-
-                        /* END: if the active product isn't the element of thisProduct
-                }
-
-                    /* END LOOP: for each active product */
                 }
             );
 
@@ -324,6 +327,14 @@
             /* END: click event listener to trigger */
 
         };
+
+        addToCart() {
+            const thisProduct = this;
+            thisProduct.name = thisProduct.data.name;
+            thisProduct.value = thisProduct.amountWidget.value;
+            app.cart.add(thisProduct);
+
+        }
 
         initOrderForm() {
             const thisProduct = this;
@@ -344,90 +355,113 @@
             thisProduct.cartButton.addEventListener('click', function(event) {
                 event.preventDefault();
                 thisProduct.processOrder();
+                thisProduct.addToCart();
 
             });
         }
 
 
+
         processOrder() {
             const thisProduct = this;
+            ////console.log('processOrder');
 
-            //make new variable pice
-            let price = thisProduct.data.price;
 
+            /* read all data from the form (using utils.serializeFormToObject) and save it to const formData */
             const formData = utils.serializeFormToObject(thisProduct.form);
+            ////console.log('formData', formData);
 
-            //start loop: for each param in params
+            //set empty object to thisProduct.params
 
-            for (let param in thisProduct.data.params) {
-                //start loop for each option in param
+            thisProduct.params = {};
 
-                for (let option in thisProduct.data.params[param].options) {
-                    //check if option is marked
+            /* set variable price to equal thisProduct.data.price */
+            let price = thisProduct.data.price;
+            ////console.log('price', price);
 
-                    // make helper variable
-                    let check = 0;
+            /* START LOOP: for each paramId in thisProduct.data.params */
+            for (let paramId in thisProduct.data.params) {
 
-                    // make const optionImages
-                    const optionImages = thisProduct.imageWrapper.querySelector('.' + param + '-' + option);
+                /* save the element in thisProduct.data.params with key paramId as const param */
+                const param = thisProduct.data.params[paramId];
 
-                    //start loop for each marked option
+                /* START LOOP: for each optionId in param.options */
+                for (let optionId in param.options) {
 
-                    for (let op of formData[param]) {
+                    /* save the element in param.options with key optionId as const option */
+                    const option = param.options[optionId];
 
-                        //if option is marked
-                        if (option == op) {
+                    /* make a new constant optionSelected...  */
+                    const optionSelected = formData.hasOwnProperty(paramId) && formData[paramId].indexOf(optionId) > -1;
 
-                            check = 1;
+                    /* START IF: if option is selected and option is not default */
+                    if (optionSelected && !option.default) {
 
-                        }
+                        /* add price of option to variable price */
+                        price += option.price;
+                    } else if (!optionSelected && option.default) {
+
+                        /* decrease the price by the price of that option */
+                        price -= option.price;
+
+                        /* END ELSE IF: if option is not selected and option is default */
                     }
 
+                    const allPicImages = thisProduct.imageWrapper.querySelectorAll('.' + paramId + '-' + optionId);
 
-                    // if option is marked
-                    if (check == 1) {
-                        // for each image in optionImages
-                        for (let img in optionImages) {
-                            // add class active to optionImages
+                    /* START IF: if option is selected */
+                    if (optionSelected) {
 
-                            optionImages.classList.add(classNames.menuProduct.imageVisible);
+                        if (!thisProduct.params[paramId]) {
+                            thisProduct.params[paramId] = {
+                                label: param.label,
+                                options: {},
+                            };
 
                         }
-                        //check if option is not default
-                        if (!thisProduct.data.params[param].options[option].default) {
-                            // if not add price
-                            price = price + thisProduct.data.params[param].options[option].price;
+                        thisProduct.params[paramId].options[optionId] = option.label;
+
+                        /* START LOOP: for each image of the option) */
+                        for (let picImage of allPicImages) {
+
+                            /* selected image add class active */
+                            picImage.classList.add(classNames.menuProduct.imageVisible);
+
+                            /* END LOOP: for each image of the option */
                         }
 
+                        /* ELSE: if option is not selected*/
                     } else {
-                        // for each image in optionImages
-                        for (let img in optionImages) {
-                            //remove class active
 
-                            optionImages.classList.remove(classNames.menuProduct.imageVisible);
+                        /* START LOOP: for each image of the option */
+                        for (let picImage of allPicImages) {
 
-                        }
-                        // if option is default
-                        if (thisProduct.data.params[param].options[option].default) {
-                            // reduce from price
-                            price = price - thisProduct.data.params[param].options[option].price;
+                            /* unselected image remove class active */
+                            picImage.classList.remove('active');
+
+                            /* END LOOP: for each image of the option */
                         }
 
+                        /* END IF: if option is not selected */
                     }
 
-
-
-
+                    /* END LOOP: for each optionId in param.options */
                 }
+                /* END LOOP: for each paramId in thisProduct.data.params */
+                console.log(thisProduct.params);
             }
+
+
             /*multiply price by amount */
 
-            price *= thisProduct.amountWidget.value;
+            thisProduct.singlePice = price;
+            thisProduct.price = thisProduct.singlePice * thisProduct.amountWidget.value;
 
             // insert price value to thisProduct.priceElem
 
-            thisProduct.priceElem.innerHTML = price;
+            thisProduct.priceElem.innerHTML = thisProduct.price;
 
+            //console.log(thisProduct.params);
         }
     }
 
