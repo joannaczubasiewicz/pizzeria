@@ -1,6 +1,6 @@
-import { select, classNames, templates, settings } from './settings.js';
-import utils from './utils.js';
-import CartProduct from './components/Cart.js';
+import { select, classNames, templates, settings } from '/js/settings.js';
+import utils from '/js/utils.js';
+import CartProduct from '/js/components/Cart.js';
 
 class Cart {
   constructor(element) {
@@ -50,6 +50,7 @@ class Cart {
     const thisCart = this;
     thisCart.dom = {};
     thisCart.dom.wrapper = element;
+    console.log(thisCart.dom.wrapper);
     thisCart.dom.toggleTrigger = thisCart.dom.wrapper.querySelector(select.cart.toggleTrigger);
     thisCart.dom.productList = document.querySelector(select.containerOf.cart);
     thisCart.renderTotalKeys = ['totalNumber', 'totalPrice', 'subtotalPrice', 'deliveryFee'];
